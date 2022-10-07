@@ -2,34 +2,29 @@
 // DEPENDENCIES
 // -----------------------------------
 require("dotenv").config();
-const { PORT = 4000, MONGODB_URL } = process.env;
+const { PORT = 4000, DATABASE_URI } = process.env;
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const cors = require("cors");
 const morgan = require("morgan");
+const session = require("express-session");
+const passport = require("passport");
 
 /////////////////////////////
 //DATABASE CONNECTION
-///////////////////////////
-mongoose.connect(MONGODB_URL);
+////////////////////////////
+mongoose.connect(DATABASE_URI);
 
 mongoose.connection
   .on("open", () => console.log("you are connected to mongoose"))
   .on("close", () => console.log("You are disconnected from mongoose"))
   .on("error", (error) => console.log(error));
 
-////////////////////////
-//MODELS
-///////////////////////
-
-//userSchema
-
-//cartSchema
-
-//productSchema
-
-//storeSchema
+//connnect to passport
+require("./config/passport");
+//require routes
+const indexRoutes = require("./routes/index");
 
 ///////////////////
 //MIDDLEWARE
@@ -37,26 +32,37 @@ mongoose.connection
 app.use(cors());
 app.use(morgan("dev"));
 app.use(express.json());
+// app.use(express.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: "SEIRRocks!",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+app.use("/", indexRoutes);
 
 ////////////////////
 //ROUTES
 ///////////////////
 //test route
 app.get("/", (req, res) => {
-  res.send("Hello Virtual Mall!");
+  res.send("Mall Landing Page");
 });
 
-const artController = require('./controllers/art.js');
-app.use('/art', artController);
+// Store route
+const storeController = require("./controllers/store.js");
+app.use("/store", storeController);
 
-const movieController = require('./controllers/movie.js');
-app.use('/movie', movieController);
+// cart route
+const cartController = require("./controllers/cart.js");
+app.use("/cart", cartController);
 
-const bookController = require('./controllers/book.js');
-app.use('/book', bookController);
-
-const sportController = require('./controllers/sport.js');
-app.use('/sport', sportController);
+// product routes
+const productController = require("./controllers/product.js");
+app.use("/", productController);
 
 // -----------------------------------
 // LISTENER
